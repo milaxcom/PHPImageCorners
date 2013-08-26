@@ -103,12 +103,14 @@ class PHPImage{
 	 */
 	public function saveToFile( $file = FALSE, $quality = FALSE ) {
 		if($this->isNO() OR !is_string($file))return $this;
-		$quality			= (is_int($quality) AND $quality>=0 AND $quality <=9) ? $quality : FALSE;
+		$quality			= (is_int($quality) AND $quality>=0 AND $quality <=100) ? $quality : FALSE;
 		$function			= "image{$this->Info["type"]}";
-		$file				= mb_eregi(".".$this->Info["type"]."$", $file)
-								? $file : mb_ereg_replace( "\.+$", "", $file ).".".$this->Info["type"];
+		$Type				= $this->Info["type"];
+		$Type				= ($Type=="jpeg") ? "jpg" : $Type;
+		$file				= mb_eregi(".".$Type."$", $file)
+								? $file : mb_ereg_replace( "\.+$", "", $file ).".".$Type;
 		if( $quality !== FALSE )	$function( $this->image, $file, $quality );
-		else						$function( $this->image, $file );
+		else						$function( $this->image, $file, 100 );
 		$this->clear();
 	}
 	/**
