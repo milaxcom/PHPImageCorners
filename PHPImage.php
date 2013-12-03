@@ -52,6 +52,8 @@ class PHPImage{
 						imagealphablending(	$this->image, TRUE );
 						imagesavealpha(		$this->image, TRUE );
 					}
+					/* FIX: для GIF рисунков. */
+					$this->toTrueColor();
 					return ($this->fromFile=TRUE);
 				}
 			}
@@ -87,6 +89,20 @@ class PHPImage{
 		}
 	}
 	
+	
+	
+	/**
+	 * Преобразование НЕполноцвета в полноцвет.
+	 **/
+	public function toTrueColor() {
+		if( !imageistruecolor( $this->image ) ) {
+			$TMP			= imagecreatetruecolor( imagesx($this->image), imagesy($this->image) );
+			imagecopy( $TMP, $this->image, 0, 0, 0, 0, imagesx($this->image), imagesy($this->image) );
+			$this->image	= $TMP;
+		}
+	}
+	
+	
 	/**
 	 * Выводит изображение в браузер.
 	 */
@@ -98,21 +114,35 @@ class PHPImage{
 		$this->clear();
 	}
 	
+	
 	/**
 	 * Сохранение в файл.
 	 */
 	public function saveToFile( $file = FALSE, $quality = FALSE ) {
 		if($this->isNO() OR !is_string($file))return $this;
-		$quality			= (is_int($quality) AND $quality>=0 AND $quality <=100) ? $quality : FALSE;
 		$function			= "image{$this->Info["type"]}";
 		$Type				= $this->Info["type"];
 		$Type				= ($Type=="jpeg") ? "jpg" : $Type;
 		$file				= mb_eregi(".".$Type."$", $file)
 								? $file : mb_ereg_replace( "\.+$", "", $file ).".".$Type;
-		if( $quality !== FALSE )	$function( $this->image, $file, $quality );
-		else						$function( $this->image, $file, 100 );
+		/* Сохраниение в зависимости о типа рисунка. */
+		SWITCH( $Type )  {
+			CASE "jpg":
+					$quality			= (is_int($quality) AND $quality>=0 AND $quality <=100) ? $quality : FALSE;
+					if( $quality !== FALSE )	$function( $this->image, $file, $quality );
+					else						$function( $this->image, $file, (($this->Info["type"]=="png")?0:100) );
+				break;
+			CASE "png":
+					$function( $this->image, $file, 0 );
+				break;
+			DEFAULT:
+					$function( $this->image, $file );
+				break;
+		}
 		$this->clear();
 	}
+	
+	
 	/**
 	 * Освобождает память, занятую изображением.
 	 */
@@ -121,6 +151,7 @@ class PHPImage{
 		imagedestroy($this->image);
 	}
 
+	
 	/**
 	 * Изменение размера изображения.
 	 */
@@ -141,6 +172,7 @@ class PHPImage{
 		return $this;
 	}
 	
+	
 	/**
 	 * Установка следующего цвета для рисования.
 	 * @param	array	$color	[R;G;B;alpha]
@@ -158,6 +190,7 @@ class PHPImage{
 		return $this;
 	}
 	
+	
 	/**
 	 * Заменяет установленный цвет на указанный.
 	 */
@@ -172,6 +205,7 @@ class PHPImage{
 		return $this;
 	}
 	
+	
 	/**
 	 * Рисование закрашенного эллипса.
 	 */
@@ -181,6 +215,7 @@ class PHPImage{
 		return $this;
 	}
 
+	
 	/**
 	 * Определяет цвет как прозрачный
 	 */
@@ -189,6 +224,7 @@ class PHPImage{
 		imagecolortransparent(	$this->image,	$this->color );
 		return $this;
 	}
+	
 	
 	/**
 	 * Наложить угловую маску.
@@ -209,6 +245,7 @@ class PHPImage{
 		$mask->clear();
 		return $this;
 	}
+	
 	
 	/**
 	 * Рисует пиксел установленного цвета в установленном месте.
@@ -247,6 +284,7 @@ class PHPImage{
 		$this->image	= $NewImage->image;
 		return $this;
 	}
+	
 	
 	/** TEST
 	 * Получение карты цветов.
